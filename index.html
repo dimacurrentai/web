@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trivial SPA – Weather in London</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 2rem; line-height: 1.4; }
+    .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+    input[type="text"] { min-width: 22rem; padding: .5rem .6rem; }
+    button { padding: .5rem .8rem; cursor: pointer; }
+    small { color: gray; }
+  </style>
+</head>
+<body>
+  <h1>Weather in London</h1>
+  <p>This is a minimal single‑page app with a button and an output text field.</p>
+
+  <div class="row">
+    <button id="btn">Get Weather</button>
+    <input id="output" type="text" placeholder="Weather will appear here." readonly />
+  </div>
+  <p><small>Uses Open‑Meteo public API.</small></p>
+
+  <script>
+    (function(){
+      const btn = document.getElementById('btn');
+      const output = document.getElementById('output');
+
+      // London coordinates and timezone.
+      const lat = 51.5074; // N.
+      const lon = -0.1278; // E/W.
+      const tz = encodeURIComponent('Europe/London');
+
+      // Request current weather (temperature and weather code).
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=${tz}`;
+
+      const weatherCodeMap = {
+        0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+        45: 'Fog', 48: 'Depositing rime fog',
+        51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle',
+        56: 'Light freezing drizzle', 57: 'Dense freezing drizzle',
+        61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain',
+        66: 'Light freezing rain', 67: 'Heavy freezing rain',
+        71: 'Slight snow fall', 73: 'Moderate snow fall', 75: 'Heavy snow fall',
+        77: 'Snow grains',
+        80: 'Slight rain showers', 81: 'Moderate rain showers', 82: 'Violent rain showers',
+        85: 'Slight snow showers', 86: 'Heavy snow showers',
+        95: 'Thunderstorm', 96: 'Thunderstorm with slight hail', 99: 'Thunderstorm with heavy hail'
+      };
+
+      async function getWeather() {
+        output.value = 'Loading…';
+        try {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!res.ok) throw new Error('Network error ' + res.status + '.');
+          const data = await res.json();
+          const c = data?.current;
+          const temp = c?.temperature_2m;
+          const code = c?.weather_code;
+          const desc = weatherCodeMap[code] || 'Unknown.';
+          if (typeof temp === 'number') {
+            output.value = `${desc}, ${temp}°C in London.`;
+          } else {
+            output.value = 'Weather data unavailable.';
+          }
+        } catch (err) {
+          output.value = 'Failed to fetch weather.';
+        }
+      }
+
+      btn.addEventListener('click', getWeather);
+    })();
+  </script>
+</body>
+</html>
